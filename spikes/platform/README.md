@@ -47,17 +47,25 @@ keyboard through GTK and WebKit to the page; the Operator's own check covers it.
 ./summary.sh reports/<run>   # one Markdown table
 ```
 
+## The webview's GPU
+
+The package `webviewgpu` limits EGL and GLX to Mesa on a hybrid laptop with an
+integrated GPU, before Wails reads the environment: the AMD GPU draws, and
+Wails keeps WebKit's DMA-BUF renderer on. `BOOSTER_WEBVIEW_GPU=system` leaves
+the choice to the system and Wails; a GL vendor or PRIME offload set by the
+user is kept. The log's first line names the result.
+
 ## The one-update-late check
 
-On the laptop the window showed each terminal update one update late, while
-the page had drawn it within 20 ms (`-trace` logs input and output events).
-`webkitcheck` is one WebKitGTK 4.1 window without Wails, to tell whether
-WebKitGTK or the embedding app causes it: its page counter must match the
-window title's.
+With Wails' own choice on the laptop (DMA-BUF off), the window showed each
+terminal update one update late, while the page had drawn it within 20 ms
+(`-trace` logs input and output events). `webkitcheck` is one WebKitGTK 4.1
+window without Wails: its page counter must match the window title's, and it
+did, with DMA-BUF on and off.
 
 ```sh
 gcc -O2 -o bin/webkitcheck webkitcheck/webkitcheck.c $(pkg-config --cflags --libs webkit2gtk-4.1)
 bin/webkitcheck            # hardware acceleration always, as Wails sets it
 bin/webkitcheck never
-bin/platform -gpu-policy never
+BOOSTER_WEBVIEW_GPU=system bin/platform   # Wails' choice: the delay
 ```

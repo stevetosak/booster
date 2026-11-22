@@ -10,6 +10,9 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
+
+	// Chooses the integrated GPU before Wails reads the environment.
+	_ "booster/spikes/platform/webviewgpu"
 )
 
 //go:embed all:frontend/dist
@@ -24,6 +27,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("webview GL: EGL vendors %q, DMA-BUF renderer off %q",
+		os.Getenv("__EGL_VENDOR_LIBRARY_FILENAMES"), os.Getenv("WEBKIT_DISABLE_DMABUF_RENDERER"))
 
 	srv, err := newServer(cfg)
 	if err != nil {

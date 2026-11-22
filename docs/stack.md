@@ -91,7 +91,9 @@ Wails turns it off itself on X11 whenever the nvidia module is loaded. With
 `WEBKIT_DISABLE_DMABUF_RENDERER=0`, or with EGL limited to Mesa (the AMD GPU,
 where Wails keeps DMA-BUF on), the delay is gone; a plain WebKitGTK window
 (`webkitcheck`) shows no delay with DMA-BUF on or off. So booster keeps the
-DMA-BUF renderer on and does not leave that choice to Wails. Whether the WebGL
+DMA-BUF renderer on and does not leave that choice to Wails: on a hybrid
+laptop it limits EGL to Mesa before Wails starts, so the integrated GPU draws
+and the discrete one stays idle (decision of 2026-11-22). Whether the WebGL
 canvas or Wails' window setup is the second condition is open.
 
 ## Tauri or Wails

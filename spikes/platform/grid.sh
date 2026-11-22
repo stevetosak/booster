@@ -4,16 +4,17 @@
 # summary.sh turns a folder of reports into one table.
 #
 # GL modes (GL_MODES chooses some, default all):
-#   default  what Wails chooses. glvnd tries NVIDIA's EGL first, so WebKit's web
-#            process renders on the NVIDIA GPU, and on X11 with the nvidia module
-#            loaded Wails turns WebKit's DMA-BUF renderer off
+#   booster  the spike's own choice (package webviewgpu): EGL and GLX limited
+#            to Mesa, so the AMD GPU draws and Wails keeps DMA-BUF on
+#   wails    the system's and Wails' choice. glvnd tries NVIDIA's EGL first, so
+#            WebKit's web process draws on the NVIDIA GPU, and on X11 with the
+#            nvidia module loaded Wails turns DMA-BUF off; inside a Wails window
+#            that shows each update one update late on an idle page
 #   dmabuf   the same, with the DMA-BUF renderer kept on (Wails does not
 #            override a value that is set)
 #   nvidia   PRIME offload to the NVIDIA GPU (Wails turns DMA-BUF off)
-#   amd      EGL and GLX see only Mesa, so the AMD GPU renders; Wails then
-#            keeps DMA-BUF on
 #
-# Usage: [GL_MODES="amd"] ./grid.sh [report folder]   (BIN overrides the binary, default bin/platform)
+# Usage: [GL_MODES="booster"] ./grid.sh [report folder]   (BIN overrides the binary, default bin/platform)
 # Runs take about 50 s each (16 runs for all modes); the windows open on the monitors, so leave them alone.
 set -euo pipefail
 
@@ -22,17 +23,13 @@ out=${1:-reports/$(date +%Y%m%d-%H%M%S)}
 run_timeout=300 # seconds; a run that hangs must not stop the grid
 offset=40       # window distance from the monitor's top-left corner
 
-read -r -a gl_modes <<<"${GL_MODES:-default dmabuf nvidia amd}"
+read -r -a gl_modes <<<"${GL_MODES:-booster wails dmabuf nvidia}"
 
 # glvnd reads only these variables: they choose the vendor libraries of GL and EGL.
 nvidia_env=(
   __NV_PRIME_RENDER_OFFLOAD=1
   __GLX_VENDOR_LIBRARY_NAME=nvidia
   __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/10_nvidia.json
-)
-amd_env=(
-  __GLX_VENDOR_LIBRARY_NAME=mesa
-  __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json
 )
 
 [[ -x $bin ]] || { echo "no binary at $bin: build it first (wails3 task build)" >&2; exit 1; }
@@ -47,10 +44,10 @@ for monitor in "${monitors[@]}"; do
   read -r name x y <<<"$monitor"
   for gl in "${gl_modes[@]}"; do
     case $gl in
-      default) gl_env=() ;;
-      dmabuf) gl_env=(WEBKIT_DISABLE_DMABUF_RENDERER=0) ;;
+      booster) gl_env=() ;;
+      wails) gl_env=(BOOSTER_WEBVIEW_GPU=system) ;;
+      dmabuf) gl_env=(BOOSTER_WEBVIEW_GPU=system WEBKIT_DISABLE_DMABUF_RENDERER=0) ;;
       nvidia) gl_env=("${nvidia_env[@]}") ;;
-      amd) gl_env=("${amd_env[@]}") ;;
       *) echo "unknown GL mode $gl" >&2; exit 2 ;;
     esac
     for renderer in webgl dom; do

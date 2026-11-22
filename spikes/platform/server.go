@@ -301,6 +301,7 @@ type runReport struct {
 
 // reportedEnv are the variables that change how WebKitGTK and the GPU draw.
 var reportedEnv = []string{
+	"BOOSTER_WEBVIEW_GPU",
 	"WEBKIT_DISABLE_DMABUF_RENDERER", "WEBKIT_DISABLE_COMPOSITING_MODE", "GSK_RENDERER",
 	"__NV_PRIME_RENDER_OFFLOAD", "__GLX_VENDOR_LIBRARY_NAME", "__EGL_VENDOR_LIBRARY_FILENAMES", "DISPLAY", "WAYLAND_DISPLAY",
 }
