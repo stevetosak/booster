@@ -124,6 +124,10 @@ the shell language carries little code, so the choice between them is cheap
 to reverse. The difference that counts is the fallback: Tauri keeps a
 Chromium path inside the same framework, Wails does not.
 
+Wails 3 is the choice (2026-11-22): with the webview on the integrated GPU
+and the DMA-BUF renderer on, Claude Code and pi run in the spike window on
+both monitors with no lag, so the fallbacks were not measured.
+
 ## How much Code-OSS
 
 | Level | What it means | Gain | Cost |

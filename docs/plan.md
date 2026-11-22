@@ -29,7 +29,7 @@ no separate Herdr or ttt window.
 | 6 | Shape | A thin shell, a web frontend behind a `Platform` interface, and a headless core that owns the sessions (see [stack.md](stack.md)) |
 | 7 | Code-OSS | Level 3, parts as libraries: own shell and layout, Monaco as the editor, chosen `monaco-vscode-api` services; not the workbench, not a fork (2026-11-22) |
 | 8 | Core language | Go, the same binary as the shell (`booster core`); the Operator prefers Go and is open to Rust |
-| 9 | Shell | Wails 3 first; Tauri 2 and Electron only if Wails fails the platform spike |
+| 9 | Shell | Wails 3: it passed the platform spike, so Tauri 2 and Electron were not measured (2026-11-22) |
 | 10 | UI framework | React with TypeScript; the editor and the terminal are imperative widgets inside it |
 | 11 | Wails on Ubuntu 22.04 | The GTK3 build tag (WebKitGTK 4.1): the default GTK4 backend needs GTK 4.10+, the laptop has 4.6.9 (2026-11-22) |
 
@@ -43,10 +43,8 @@ picks the shell.
 
 - [x] One minimal frontend with one xterm.js terminal on a local PTY, in Wails 3.
 - [x] Input latency and output throughput, per renderer and per GPU, in one table ([stack.md](stack.md#measured-on-the-laptop-2026-11-22)).
-- [ ] The Operator's own check of Claude Code and pi in the window, on both monitors: the window showed each update one update late, because Wails turns WebKit's DMA-BUF renderer off on this laptop; with it on, typing shows at once.
-- [ ] Only if Wails lags: the same frontend in Tauri 2 and in Electron.
-- [ ] The memory of the same frontend in Tauri (WebKitGTK) and in Electron, counted with PSS so shared pages count once.
-- [ ] The Operator's choice recorded in the Decisions.
+- [x] The Operator's own check of Claude Code and pi in the window, on both monitors. The first check showed each update one update late, because Wails turns WebKit's DMA-BUF renderer off on this laptop; with the webview on the AMD GPU and DMA-BUF on, both agents run with no lag.
+- [x] The Operator's choice recorded in the Decisions (9). Wails did not lag, so Tauri 2 and Electron, with their memory, were not measured.
 
 ## 2. Session spike
 
