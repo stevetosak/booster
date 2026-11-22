@@ -43,7 +43,7 @@ picks the shell.
 
 - [x] One minimal frontend with one xterm.js terminal on a local PTY, in Wails 3.
 - [x] Input latency and output throughput, per renderer and per GPU, in one table ([stack.md](stack.md#measured-on-the-laptop-2026-11-22)).
-- [ ] The Operator's own check of Claude Code and pi in the window, on both monitors: the window shows each update one update late (cause open).
+- [ ] The Operator's own check of Claude Code and pi in the window, on both monitors: the window showed each update one update late, because Wails turns WebKit's DMA-BUF renderer off on this laptop; with it on, typing shows at once.
 - [ ] Only if Wails lags: the same frontend in Tauri 2 and in Electron.
 - [ ] The memory of the same frontend in Tauri (WebKitGTK) and in Electron, counted with PSS so shared pages count once.
 - [ ] The Operator's choice recorded in the Decisions.

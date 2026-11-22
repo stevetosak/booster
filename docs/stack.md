@@ -86,8 +86,13 @@ found it: when the terminal is otherwise idle, the window shows each update
 one update late, so a typed key appears only with the next key. A trace showed
 the keys reach the program once and in order, and the page parses and draws
 each echo within 20 ms; the delay is between WebKit's web process and the
-window, with both renderers, every GL mode and every hardware acceleration
-policy. Whether Wails' GTK3 setup or WebKitGTK 2.50 itself causes it is open.
+window. The cause is the DMA-BUF renderer turned off inside a Wails window:
+Wails turns it off itself on X11 whenever the nvidia module is loaded. With
+`WEBKIT_DISABLE_DMABUF_RENDERER=0`, or with EGL limited to Mesa (the AMD GPU,
+where Wails keeps DMA-BUF on), the delay is gone; a plain WebKitGTK window
+(`webkitcheck`) shows no delay with DMA-BUF on or off. So booster keeps the
+DMA-BUF renderer on and does not leave that choice to Wails. Whether the WebGL
+canvas or Wails' window setup is the second condition is open.
 
 ## Tauri or Wails
 
