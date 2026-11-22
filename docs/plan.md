@@ -41,9 +41,10 @@ the NVIDIA monitor with the WebGL and DOM renderers; if it lags, the same
 frontend is measured in Tauri 2 (WebKitGTK, GTK3) and Electron; the Operator
 picks the shell.
 
-- [ ] One minimal frontend with one xterm.js terminal on a local PTY, in Wails 3.
+- [x] One minimal frontend with one xterm.js terminal on a local PTY, in Wails 3.
+- [x] Input latency and output throughput, per renderer and per GPU, in one table ([stack.md](stack.md#measured-on-the-laptop-2026-11-22)): Wails does not lag.
+- [ ] The Operator's own check of Claude Code and pi in the window, on both monitors.
 - [ ] Only if Wails lags: the same frontend in Tauri 2 and in Electron.
-- [ ] Input latency and output throughput, per renderer and per GPU, in one table.
 - [ ] The memory of the same frontend in Tauri (WebKitGTK) and in Electron, counted with PSS so shared pages count once.
 - [ ] The Operator's choice recorded in the Decisions.
 

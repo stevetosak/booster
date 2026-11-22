@@ -45,6 +45,44 @@ is: Tauri 3's CEF runtime (`tauri-runtime-cef` 3.0.0-alpha.7, alpha; it ships
 Chromium, hundreds of MB larger), or Electron (45.4.1), which ships Chromium
 and Node together.
 
+### Measured on the laptop (2026-11-22)
+
+The platform spike (`spikes/platform`, `grid.sh`) ran xterm.js 6.0.0 in Wails
+3.1 with the GTK3 build (WebKitGTK 2.50.4) on both monitors, with the WebGL
+and the DOM renderer, in four GL modes. WebKit hides the GPU from the page
+(WebGL reports "Apple GPU"), so the GPU was read from the driver libraries the
+web process maps and from `nvidia-smi`. That showed the first surprise: by
+default the web process renders on the NVIDIA GPU, because glvnd tries
+NVIDIA's EGL before Mesa's, and Wails turns the DMA-BUF renderer off on X11
+whenever the nvidia module is loaded. Only `__EGL_VENDOR_LIBRARY_FILENAMES`
+set to Mesa's file makes the AMD GPU render, and then Wails keeps DMA-BUF on.
+
+WebGL, one run per cell, the laptop panel / the external monitor:
+
+| GL mode | Renders on | DMA-BUF | Plain text MB/s | Coloured text MB/s | Typing beside a 2 MB/s stream, ms p50 / p95 |
+|---|---|---|---|---|---|
+| default | NVIDIA | off | 11.6 / 16.6 | 15.0 / 14.1 | 26 / 40, 26 / 39 |
+| DMA-BUF kept on | NVIDIA | on | 22.9 / 12.0 | 11.9 / 8.1 | 24 / 33, 24 / 33 |
+| PRIME offload | NVIDIA | off | 18.9 / 19.3 | 14.7 / 14.9 | 26 / 35, 26 / 42 |
+| Mesa only | AMD | on | 22.4 / 22.5 | 11.9 / 11.3 | 24 / 32, 24 / 33 |
+
+WebGL never fell to a software path. Typing with no other output takes 24–25
+ms at p50 and 32–33 ms at p95 in every cell, from the key to the frame after
+the echo is drawn: about two frames at 60 Hz. The measurement starts at
+xterm.js's input, so the path from the keyboard through GTK and WebKit is not
+in it. Beside a streaming terminal WebGL keeps that latency, while the DOM
+renderer climbs to 29–84 ms at p50 and 58–133 ms at p95, so the terminal needs
+WebGL, and WebGL works on both GPUs. Throughput is bound by xterm.js's parser
+on the page's one thread; single runs differ up to two times between the
+monitors, and every value is far above an agent's output. The AMD path is as
+fast to type on and keeps the NVIDIA GPU idle, but it drops more frames below
+20 per second beside a stream (6–12 frames over 50 ms in a ten-second test,
+against 1–5 on NVIDIA). The app and WebKit's processes use 206–247 MB (PSS)
+idle and 312–375 MB with two terminals, one of them streaming.
+
+By these numbers Wails does not lag, so Tauri and Electron are measured only if
+the Operator's own check with Claude Code and pi finds lag.
+
 ## Tauri or Wails
 
 Wails is the Go counterpart of Tauri: a Go backend, the system webview, and
