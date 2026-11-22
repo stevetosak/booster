@@ -19,18 +19,30 @@ import (
 
 	"github.com/coder/websocket"
 
+	"github.com/stevetosak/booster/internal/project"
 	"github.com/stevetosak/booster/internal/session"
 )
 
 // ErrRunning means another core holds the lock.
 var ErrRunning = errors.New("a core is already running")
 
+// Config is what the core serves.
+type Config struct {
+	Paths    Paths
+	Backend  session.Backend
+	Projects *project.Registry
+	// PageOrigin is the whole origin (scheme included) of the window's page,
+	// the only origin let in over TCP.
+	PageOrigin string
+}
+
 // Server serves the API on both listeners.
 type Server struct {
-	backend session.Backend
-	origin  string // the window page's origin, the only one let in over TCP
-	paths   Paths
-	token   string
+	backend  session.Backend
+	projects *project.Registry
+	origin   string
+	paths    Paths
+	token    string
 
 	lock     *os.File
 	uds, tcp net.Listener
@@ -41,9 +53,9 @@ type Server struct {
 
 type unixKey struct{}
 
-// Listen takes the core's lock and opens both listeners. pageOrigin is the
-// whole origin (scheme included) of the window's page.
-func Listen(p Paths, b session.Backend, pageOrigin string) (_ *Server, err error) {
+// Listen takes the core's lock and opens both listeners.
+func Listen(cfg Config) (_ *Server, err error) {
+	p := cfg.Paths
 	if err := p.ensureDir(); err != nil {
 		return nil, err
 	}
@@ -85,8 +97,8 @@ func Listen(p Paths, b session.Backend, pageOrigin string) (_ *Server, err error
 		return nil, err
 	}
 	s := &Server{
-		backend: b, origin: pageOrigin, paths: p, token: hex.EncodeToString(tok),
-		lock: lock, uds: uds, tcp: tcp, stopped: make(chan struct{}),
+		backend: cfg.Backend, projects: cfg.Projects, origin: cfg.PageOrigin, paths: p,
+		token: hex.EncodeToString(tok), lock: lock, uds: uds, tcp: tcp, stopped: make(chan struct{}),
 	}
 	if err := writeInfo(p, Info{Addr: tcp.Addr().String(), Token: s.token, PID: os.Getpid()}); err != nil {
 		return nil, err
@@ -138,6 +150,7 @@ func (s *Server) routes() http.Handler {
 		writeJSON(w, map[string]bool{"stopping": true})
 		go s.Stop()
 	})
+	s.projectRoutes(mux)
 	return s.guard(mux)
 }
 
@@ -182,8 +195,7 @@ func (s *Server) guard(next http.Handler) http.Handler {
 
 func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 	var spec session.Spec
-	if err := json.NewDecoder(r.Body).Decode(&spec); err != nil {
-		http.Error(w, "bad request: "+err.Error(), http.StatusBadRequest)
+	if !decode(w, r, &spec) {
 		return
 	}
 	info, err := s.backend.Create(spec)
@@ -197,8 +209,7 @@ type promptRequest struct {
 
 func (s *Server) handlePrompt(w http.ResponseWriter, r *http.Request) {
 	var req promptRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "bad request: "+err.Error(), http.StatusBadRequest)
+	if !decode(w, r, &req) {
 		return
 	}
 	s.reply(w, s.backend.Prompt(r.PathValue("id"), req.Text, req.Submit), nil)
@@ -206,10 +217,12 @@ func (s *Server) handlePrompt(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) reply(w http.ResponseWriter, err error, v any) {
 	switch {
-	case errors.Is(err, session.ErrNoSession):
+	case errors.Is(err, session.ErrNoSession), errors.Is(err, project.ErrNotFound):
 		http.Error(w, err.Error(), http.StatusNotFound)
-	case errors.Is(err, session.ErrUnknownKind):
+	case errors.Is(err, session.ErrUnknownKind), errors.Is(err, project.ErrInvalid):
 		http.Error(w, err.Error(), http.StatusBadRequest)
+	case errors.Is(err, project.ErrConflict):
+		http.Error(w, err.Error(), http.StatusConflict)
 	case err != nil:
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 	case v == nil:
@@ -217,6 +230,16 @@ func (s *Server) reply(w http.ResponseWriter, err error, v any) {
 	default:
 		writeJSON(w, v)
 	}
+}
+
+// decode reads a JSON request body into v; on a fault it answers 400 and
+// returns false.
+func decode(w http.ResponseWriter, r *http.Request, v any) bool {
+	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
+		http.Error(w, "bad request: "+err.Error(), http.StatusBadRequest)
+		return false
+	}
+	return true
 }
 
 func writeJSON(w http.ResponseWriter, v any) {

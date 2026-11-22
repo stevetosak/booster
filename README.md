@@ -28,10 +28,18 @@ bin/booster new -kind claude -dir ~/Projects/Active/booster
 bin/booster prompt <id> 'text'      # an Action prompt; -submit=false types it only
 bin/booster close <id>
 bin/booster stop                    # ends the core and every session
+bin/booster project import          # each repository in ~/Projects/Active once; -dir sets another folder
+bin/booster project list            # each Project's worktrees, branches and kalfa project keys; -json
+bin/booster project add [folder]    # the repository around a folder, by its main checkout; -name sets the name
+bin/booster project remove <name>   # off the list; the files stay
 ```
 
 The core's socket, `core.json` (its TCP address and token) and `core.log`
-are in `$XDG_RUNTIME_DIR/booster`.
+are in `$XDG_RUNTIME_DIR/booster`. The core keeps the Projects in
+`$XDG_CONFIG_HOME/booster/projects.json` (each name and main checkout, and
+when the import last ran) and reads it again on each request, so an edit by
+hand counts at once. The worktrees come from `git worktree list`, and each
+worktree's kalfa project key is computed as kalfa computes it.
 
 ## The code
 
@@ -40,6 +48,8 @@ are in `$XDG_RUNTIME_DIR/booster`.
 | `main.go` | Embeds the built page and hands the command line to `internal/cli` |
 | `internal/cli` | The commands |
 | `internal/core` | The core: the HTTP/WebSocket API on a Unix socket (mode 0600) and on loopback TCP with a token, the client, the detached start |
+| `internal/project` | The Project registry, the worktrees from git, the kalfa project key, the import |
+| `internal/gittest` | Git repositories for tests, with git cut off from the user's configuration |
 | `internal/session` | `session.Backend`, what the core needs from a session host |
 | `internal/session/ptyhost` | The PTY session host: each program on its own PTY, its output fed to an emulator (`charmbracelet/x/vt`) so a window that attaches later gets the screen |
 | `internal/window` | The Wails window; its page talks to the core directly |

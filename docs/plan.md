@@ -77,7 +77,7 @@ this part kalfa's herdr Module (`kalfa board`, the successor tab, `kalfa
 space`) still sees only Herdr (see 13).
 
 - [x] The code tree: one Go module at the repository root with `booster` (the window) and `booster core`; the spike's session host, core and window move in and are cleaned, and `spikes/` stays as the record. The build is a Makefile, not Wails' generated Taskfiles, and CI runs gofmt, vet, the race tests and the build on GTK3.
-- [ ] Projects: the registry, the worktrees, the kalfa project key and the one-time import (see 15).
+- [x] Projects: the registry, the worktrees, the kalfa project key and the one-time import (see 15). `booster project list|add|remove|import` and the API under `/api/projects`; the key matched kalfa's own `projectKey` for each of the 10 checkouts in `~/Projects/Active`. It differs from kalfa only on a remote URL with `..` in its path, an IPv6 host or a non-ASCII host, which no remote has.
 - [ ] Sessions: a session id per agent, the session list saved, resume after a core restart, a separate instance for development builds (see 14); the agent's state (working, idle, waiting for the Operator) is shaped as its own design question.
 - [ ] `--json` output in kalfa for `task list`, `task show`, `plan` and `defer`, in the kalfa repository (see 16).
 - [ ] The Board: the Tasks of every Project, from kalfa's CLI.

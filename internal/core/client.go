@@ -9,11 +9,13 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"syscall"
 	"time"
 
+	"github.com/stevetosak/booster/internal/project"
 	"github.com/stevetosak/booster/internal/session"
 )
 
@@ -55,6 +57,33 @@ func (c *Client) Prompt(id, text string, submit bool) error {
 
 func (c *Client) Close(id string) error {
 	return c.do(http.MethodDelete, "/api/sessions/"+id, nil, nil)
+}
+
+func (c *Client) Projects() (project.Overview, error) {
+	var out project.Overview
+	return out, c.do(http.MethodGet, "/api/projects", nil, &out)
+}
+
+func (c *Client) Project(name string) (project.Detail, error) {
+	var out project.Detail
+	return out, c.do(http.MethodGet, "/api/projects/"+url.PathEscape(name), nil, &out)
+}
+
+// AddProject registers the repository around dir, an absolute path; an empty
+// name takes the main checkout's folder name.
+func (c *Client) AddProject(dir, name string) (project.Project, error) {
+	var out project.Project
+	return out, c.do(http.MethodPost, "/api/projects", addProjectRequest{Dir: dir, Name: name}, &out)
+}
+
+func (c *Client) RemoveProject(name string) error {
+	return c.do(http.MethodDelete, "/api/projects/"+url.PathEscape(name), nil, nil)
+}
+
+// ImportProjects registers each repository in dir, an absolute path, once.
+func (c *Client) ImportProjects(dir string) (project.ImportReport, error) {
+	var out project.ImportReport
+	return out, c.do(http.MethodPost, "/api/projects/import", importRequest{Dir: dir}, &out)
 }
 
 func (c *Client) Shutdown() error { return c.do(http.MethodPost, "/api/shutdown", nil, nil) }

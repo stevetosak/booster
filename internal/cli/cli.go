@@ -40,6 +40,7 @@ func commands() []command {
 		{"prompt", "[-submit=false] <id> <text | ->", "send an Action prompt to a session", runPrompt},
 		{"close", "<id>", "end a session", runClose},
 		{"stop", "", "stop the core and every session", runStop},
+		{"project", "<command> ...", "manage the Projects (booster project help)", runProject},
 	}
 }
 
@@ -50,17 +51,23 @@ func Run(args []string, page fs.FS) error {
 	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
 		name, args = args[0], args[1:]
 	}
+	return dispatch("booster", commands(), env{page: page}, name, args)
+}
+
+// dispatch runs the command of the table cmds that name names; prog is what
+// the usage text calls the table.
+func dispatch(prog string, cmds []command, e env, name string, args []string) error {
 	if name == "help" {
-		usage(os.Stdout)
+		usage(os.Stdout, prog, cmds)
 		return nil
 	}
-	for _, c := range commands() {
+	for _, c := range cmds {
 		if c.name == name {
-			return c.run(env{page: page}, args)
+			return c.run(e, args)
 		}
 	}
-	fmt.Fprintf(os.Stderr, "booster: unknown command %q\n\n", name)
-	usage(os.Stderr)
+	fmt.Fprintf(os.Stderr, "%s: unknown command %q\n\n", prog, name)
+	usage(os.Stderr, prog, cmds)
 	return ErrUsage
 }
 
@@ -80,11 +87,10 @@ func parse(flags *flag.FlagSet, args []string) error {
 	return err
 }
 
-func usage(w io.Writer) {
-	fmt.Fprintln(w, "Usage: booster [command] [arguments]")
-	fmt.Fprintln(w)
+func usage(w io.Writer, prog string, cmds []command) {
+	fmt.Fprintf(w, "Usage: %s [command] [arguments]\n\n", prog)
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-	for _, c := range commands() {
+	for _, c := range cmds {
 		fmt.Fprintf(tw, "  %s %s\t%s\n", c.name, c.args, c.summary)
 	}
 	fmt.Fprintf(tw, "  help\tshow this text\n")

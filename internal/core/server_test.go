@@ -6,12 +6,14 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/coder/websocket"
 
+	"github.com/stevetosak/booster/internal/project"
 	"github.com/stevetosak/booster/internal/session"
 	"github.com/stevetosak/booster/internal/session/ptyhost"
 )
@@ -30,7 +32,10 @@ func startCore(t *testing.T) (Paths, *Server, Info) {
 		Programs: map[session.Kind][]string{"echo": {"bash", "-c", `printf 'ready\n'; while read -r l; do printf 'echo:%s\n' "$l"; done`}},
 		Env:      os.Environ(),
 	})
-	srv, err := Listen(p, host, testOrigin)
+	srv, err := Listen(Config{
+		Paths: p, Backend: host, PageOrigin: testOrigin,
+		Projects: project.NewRegistry(filepath.Join(dir, "projects.json")),
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +56,7 @@ func TestClientWithoutCore(t *testing.T) {
 
 func TestSecondCoreRefused(t *testing.T) {
 	p, _, _ := startCore(t)
-	if _, err := Listen(p, ptyhost.New(ptyhost.Options{}), testOrigin); err != ErrRunning {
+	if _, err := Listen(Config{Paths: p, Backend: ptyhost.New(ptyhost.Options{}), PageOrigin: testOrigin}); err != ErrRunning {
 		t.Fatalf("second Listen: %v, want ErrRunning", err)
 	}
 }
