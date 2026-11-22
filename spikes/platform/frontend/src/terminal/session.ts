@@ -47,6 +47,7 @@ export class TerminalSession {
   private readonly fit = new FitAddon();
   private readonly resizeObserver: ResizeObserver;
   private readonly parsedListeners = new Set<() => void>();
+  private readonly receivedListeners = new Set<(bytes: number) => void>();
   private drainWaiters: (() => void)[] = [];
   private renderer: RendererInfo;
   private socket: WebSocket | null = null;
@@ -95,6 +96,12 @@ export class TerminalSession {
     return this.received;
   }
 
+  /** Calls listener each time a chunk of output arrives, before it is parsed. */
+  onReceived(listener: (bytes: number) => void): () => void {
+    this.receivedListeners.add(listener);
+    return () => this.receivedListeners.delete(listener);
+  }
+
   /** Calls listener each time a chunk of output is parsed into the buffer. */
   onParsed(listener: () => void): () => void {
     this.parsedListeners.add(listener);
@@ -131,6 +138,9 @@ export class TerminalSession {
 
   private write(data: Uint8Array): void {
     this.received += data.byteLength;
+    for (const listener of this.receivedListeners) {
+      listener(data.byteLength);
+    }
     this.pendingWrites++;
     this.term.write(data, () => {
       this.pendingWrites--;

@@ -49,6 +49,7 @@ func main() {
 		BackgroundColour: application.NewRGB(24, 24, 27),
 		URL:              "/?" + srv.frontendQuery().Encode(),
 		DevToolsEnabled:  true,
+		Linux:            application.LinuxWindow{WebviewGpuPolicy: gpuPolicies[cfg.gpuPolicy]},
 	})
 	if cfg.placed() {
 		// Wails places a new window relative to the monitor it starts on; the

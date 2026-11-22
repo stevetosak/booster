@@ -71,6 +71,9 @@ func (s *server) frontendQuery() url.Values {
 	if s.cfg.autobench != "" {
 		q.Set("autobench", "1")
 	}
+	if s.cfg.trace {
+		q.Set("trace", "1")
+	}
 	return q
 }
 
@@ -212,10 +215,10 @@ func pumpInput(ctx context.Context, conn *websocket.Conn, sess *ptySession) {
 }
 
 // controlRequest asks for the memory of the process tree, logs the page's
-// progress, or saves a report.
+// progress or terminal trace, or saves a report.
 type controlRequest struct {
 	Op     string          `json:"op"`
-	Step   string          `json:"step,omitempty"`
+	Text   string          `json:"text,omitempty"`
 	Report json.RawMessage `json:"report,omitempty"`
 }
 
@@ -258,7 +261,10 @@ func (s *server) control(req controlRequest) controlReply {
 		return controlReply{Op: req.Op, Memory: &mem}
 	case "progress":
 		// The log is how a watcher sees a run advance or stall.
-		log.Printf("progress: %s", req.Step)
+		log.Printf("progress: %s", req.Text)
+		return controlReply{Op: req.Op}
+	case "trace":
+		log.Printf("trace: %s", req.Text)
 		return controlReply{Op: req.Op}
 	case "report":
 		path, err := s.saveReport(req.Report)
@@ -282,14 +288,15 @@ type webviewBuild struct {
 
 // runReport is one run: the page's measurements with what only this side knows.
 type runReport struct {
-	Label    string            `json:"label"`
-	Renderer string            `json:"renderer"`
-	Time     string            `json:"time"`
-	Env      map[string]string `json:"env"`
-	Webview  webviewBuild      `json:"webview"`
-	Memory   *memoryReport     `json:"memory,omitempty"`
-	GPU      []processGPU      `json:"gpu,omitempty"`
-	Page     json.RawMessage   `json:"page"`
+	Label     string            `json:"label"`
+	Renderer  string            `json:"renderer"`
+	GPUPolicy string            `json:"gpuPolicy"`
+	Time      string            `json:"time"`
+	Env       map[string]string `json:"env"`
+	Webview   webviewBuild      `json:"webview"`
+	Memory    *memoryReport     `json:"memory,omitempty"`
+	GPU       []processGPU      `json:"gpu,omitempty"`
+	Page      json.RawMessage   `json:"page"`
 }
 
 // reportedEnv are the variables that change how WebKitGTK and the GPU draw.
@@ -300,12 +307,13 @@ var reportedEnv = []string{
 
 func (s *server) saveReport(page json.RawMessage) (string, error) {
 	rep := runReport{
-		Label:    s.cfg.label,
-		Renderer: s.cfg.renderer,
-		Time:     time.Now().Format(time.RFC3339),
-		Env:      map[string]string{},
-		Webview:  webview,
-		Page:     page,
+		Label:     s.cfg.label,
+		Renderer:  s.cfg.renderer,
+		GPUPolicy: s.cfg.gpuPolicy,
+		Time:      time.Now().Format(time.RFC3339),
+		Env:       map[string]string{},
+		Webview:   webview,
+		Page:      page,
 	}
 	rep.Webview.Version = packageVersion(webview.Package)
 	for _, k := range reportedEnv {

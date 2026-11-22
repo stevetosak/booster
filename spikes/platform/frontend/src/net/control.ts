@@ -61,7 +61,12 @@ export class ControlClient {
 
   /** Writes a step of the run to the Go side's log, where a watcher sees it. */
   async progress(step: string): Promise<void> {
-    await this.request({ op: "progress", step });
+    await this.request({ op: "progress", text: step });
+  }
+
+  /** Writes one line of the terminal trace to the Go side's log. */
+  async trace(line: string): Promise<void> {
+    await this.request({ op: "trace", text: line });
   }
 
   /** Saves the page's report with the Go side's facts; returns the file path. */

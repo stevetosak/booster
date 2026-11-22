@@ -1,9 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import type { SpikeParams } from "../params";
+import { traceTerminal } from "../terminal/trace";
 import { TerminalSession } from "../terminal/session";
 
+interface Props {
+  params: SpikeParams;
+  visible: boolean;
+  /** Receives the trace lines when the spike runs with -trace. */
+  onTrace?: (line: string) => void;
+}
+
 /** The main terminal: the program the spike was started with, such as claude or pi. */
-export function MainTerminal({ params, visible }: { params: SpikeParams; visible: boolean }) {
+export function MainTerminal({ params, visible, onTrace }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const session = useRef<TerminalSession | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -17,6 +25,9 @@ export function MainTerminal({ params, visible }: { params: SpikeParams; visible
           return;
         }
         session.current = s;
+        if (onTrace) {
+          traceTerminal(s, onTrace);
+        }
         s.term.focus();
         s.exited.then((reason) => setStatus(`The program ended: ${reason}`));
       },
@@ -27,7 +38,7 @@ export function MainTerminal({ params, visible }: { params: SpikeParams; visible
       session.current?.dispose();
       session.current = null;
     };
-  }, [params]);
+  }, [params, onTrace]);
 
   useEffect(() => {
     if (visible) {

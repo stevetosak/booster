@@ -11,6 +11,8 @@ export interface SpikeParams {
   label: string;
   /** Run the benchmarks at once, save the report and let the app quit. */
   autobench: boolean;
+  /** Write the main terminal's input and output events to the Go log. */
+  trace: boolean;
 }
 
 export function readParams(search: string = window.location.search): SpikeParams {
@@ -26,6 +28,7 @@ export function readParams(search: string = window.location.search): SpikeParams
     renderer: q.get("renderer") === "dom" ? "dom" : "webgl",
     label: q.get("label") ?? "",
     autobench: q.get("autobench") === "1",
+    trace: q.get("trace") === "1",
   };
 }
 
