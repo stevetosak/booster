@@ -4,16 +4,16 @@
 package project
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
 	"time"
 	"unicode"
+
+	"github.com/stevetosak/booster/internal/jsonfile"
 )
 
 var (
@@ -70,16 +70,6 @@ type Registry struct {
 
 func NewRegistry(path string) *Registry {
 	return &Registry{path: path, now: time.Now}
-}
-
-// DefaultPath is $XDG_CONFIG_HOME/booster/projects.json, else the same in
-// ~/.config.
-func DefaultPath() (string, error) {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "booster", "projects.json"), nil
 }
 
 func (r *Registry) Overview() (Overview, error) {
@@ -162,15 +152,8 @@ func (r *Registry) change(edit func(*registryFile) error) error {
 
 func (r *Registry) load() (registryFile, error) {
 	f := registryFile{Version: fileVersion}
-	b, err := os.ReadFile(r.path)
-	if errors.Is(err, os.ErrNotExist) {
-		return f, nil
-	}
-	if err != nil {
+	if ok, err := jsonfile.Read(r.path, &f); err != nil || !ok {
 		return f, err
-	}
-	if err := json.Unmarshal(b, &f); err != nil {
-		return f, fmt.Errorf("%s: %w", r.path, err)
 	}
 	if f.Version != fileVersion {
 		return f, fmt.Errorf("%s: version %d, this booster reads version %d", r.path, f.Version, fileVersion)
@@ -178,32 +161,11 @@ func (r *Registry) load() (registryFile, error) {
 	return f, nil
 }
 
-// save writes the file to a temporary file beside it and renames it over the
-// old one, so a reader never sees half a file.
 func (r *Registry) save(f registryFile) error {
 	if f.Projects == nil {
 		f.Projects = []Project{}
 	}
-	b, err := json.MarshalIndent(f, "", "  ")
-	if err != nil {
-		return err
-	}
-	if err := os.MkdirAll(filepath.Dir(r.path), 0o700); err != nil {
-		return err
-	}
-	tmp, err := os.CreateTemp(filepath.Dir(r.path), ".projects-*.json")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(tmp.Name()) // fails once the rename has moved it
-	_, err = tmp.Write(append(b, '\n'))
-	if cerr := tmp.Close(); err == nil {
-		err = cerr
-	}
-	if err != nil {
-		return err
-	}
-	return os.Rename(tmp.Name(), r.path)
+	return jsonfile.Write(r.path, f)
 }
 
 // index finds a Project by name, ignoring case; -1 when there is none.

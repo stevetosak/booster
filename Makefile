@@ -5,11 +5,19 @@
 # default; `make TAGS=` builds the GTK4 backend.
 TAGS ?= gtk3
 BIN := bin/booster
+PREFIX ?= $(HOME)/.local
 
-.PHONY: build page check clean
+# `make install` stamps the daily booster as the main instance; every other
+# build is the dev instance, with its own core and folders (internal/instance).
+STAMP_MAIN := -ldflags '-X github.com/stevetosak/booster/internal/instance.stamped=main'
+
+.PHONY: build install page check clean
 
 build: page
 	go build -tags '$(TAGS),production' -trimpath -o $(BIN) .
+
+install: page
+	go build -tags '$(TAGS),production' -trimpath $(STAMP_MAIN) -o $(PREFIX)/bin/booster .
 
 # The Go build embeds frontend/dist, so vet and test need the page too.
 page: frontend/node_modules/.package-lock.json

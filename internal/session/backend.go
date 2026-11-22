@@ -37,6 +37,7 @@ type Info struct {
 	ID      string    `json:"id"`
 	Kind    Kind      `json:"kind"`
 	Dir     string    `json:"dir"`
+	Agent   string    `json:"agent,omitempty"` // the agent's own session id (Claude Code, pi)
 	Title   string    `json:"title"`
 	Size    Size      `json:"size"`
 	Started time.Time `json:"started"`

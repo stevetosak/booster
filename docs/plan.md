@@ -37,6 +37,8 @@ no separate Herdr or ttt window.
 | 14 | Agents across a core restart | The core owns the PTYs; each agent gets a session id at start and is started again with resume after a core restart; a development build runs as a separate instance; a holder process per session stays a later option behind `session.Backend` (2026-11-22) |
 | 15 | How booster knows a Project | An own registry (`$XDG_CONFIG_HOME/booster/projects.json`: name and main checkout), worktrees from `git worktree list`, the kalfa project key computed as kalfa does, a one-time import of `~/Projects/Active` (2026-11-22) |
 | 16 | How the Board reads kalfa | Through kalfa's CLI, with new `--json` output; booster does not read kalfa's files (2026-11-22) |
+| 17 | Instances | Every build is the dev instance unless `make install` stamps it as the main one; `BOOSTER_INSTANCE` names another for one run; each instance has its own runtime, state and config folders, so a dev instance has its own Project list (2026-11-22) |
+| 18 | Agent state | The agents report it (working, waiting for the Operator, idle), with the reporting added to each session at start: Claude Code hooks through `--settings` that run `booster hook`, a booster pi extension through `--extension`; nothing goes into the Operator's global settings (2026-11-22) |
 
 ## 1. Platform spike
 
@@ -78,7 +80,7 @@ space`) still sees only Herdr (see 13).
 
 - [x] The code tree: one Go module at the repository root with `booster` (the window) and `booster core`; the spike's session host, core and window move in and are cleaned, and `spikes/` stays as the record. The build is a Makefile, not Wails' generated Taskfiles, and CI runs gofmt, vet, the race tests and the build on GTK3.
 - [x] Projects: the registry, the worktrees, the kalfa project key and the one-time import (see 15). `booster project list|add|remove|import` and the API under `/api/projects`; the key matched kalfa's own `projectKey` for each of the 10 checkouts in `~/Projects/Active`. It differs from kalfa only on a remote URL with `..` in its path, an IPv6 host or a non-ASCII host, which no remote has.
-- [ ] Sessions: a session id per agent, the session list saved, resume after a core restart, a separate instance for development builds (see 14); the agent's state (working, idle, waiting for the Operator) is shaped as its own design question.
+- [x] Sessions: a session id per agent, the session list saved, resume after a core restart, a separate instance for development builds (see 14 and 17); the agent's state (working, idle, waiting for the Operator) is shaped as its own design question (see 18). The Operator's check: a Claude Code and a pi session showed their conversation after `booster stop` and a new start. A Claude Code session that got no message has nothing to resume and starts new with the same id.
 - [ ] `--json` output in kalfa for `task list`, `task show`, `plan` and `defer`, in the kalfa repository (see 16).
 - [ ] The Board: the Tasks of every Project, from kalfa's CLI.
 - [ ] The minimal window: a Project switcher, session tabs per Project, the Board as a list.

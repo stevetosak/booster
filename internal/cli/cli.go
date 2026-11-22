@@ -12,6 +12,9 @@ import (
 	"os"
 	"strings"
 	"text/tabwriter"
+
+	"github.com/stevetosak/booster/internal/core"
+	"github.com/stevetosak/booster/internal/instance"
 )
 
 // ErrUsage means the command line was wrong. The fault is already reported on
@@ -28,8 +31,15 @@ type command struct {
 
 // env is what the commands get from main.
 type env struct {
-	page fs.FS // the built page of the window
+	page fs.FS             // the built page of the window
+	inst instance.Instance // which booster this is
 }
+
+// paths are the files of this instance's core.
+func (e env) paths() core.Paths { return core.PathsIn(e.inst.RuntimeDir()) }
+
+// client reaches this instance's core over its Unix socket.
+func (e env) client() *core.Client { return core.NewClient(e.paths()) }
 
 func commands() []command {
 	return []command{
@@ -51,7 +61,11 @@ func Run(args []string, page fs.FS) error {
 	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
 		name, args = args[0], args[1:]
 	}
-	return dispatch("booster", commands(), env{page: page}, name, args)
+	inst, err := instance.Current()
+	if err != nil {
+		return err
+	}
+	return dispatch("booster", commands(), env{page: page, inst: inst}, name, args)
 }
 
 // dispatch runs the command of the table cmds that name names; prog is what

@@ -28,13 +28,13 @@ func runProject(e env, args []string) error {
 	return dispatch("booster project", projectCommands(), e, args[0], args[1:])
 }
 
-func runProjectList(_ env, args []string) error {
+func runProjectList(e env, args []string) error {
 	flags := flag.NewFlagSet("project list", flag.ContinueOnError)
 	asJSON := flags.Bool("json", false, "print the core's answer as JSON")
 	if err := parse(flags, args); err != nil {
 		return err
 	}
-	o, err := client().Projects()
+	o, err := e.client().Projects()
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func branchOf(w project.Worktree) string {
 	return b
 }
 
-func runProjectAdd(_ env, args []string) error {
+func runProjectAdd(e env, args []string) error {
 	flags := flag.NewFlagSet("project add", flag.ContinueOnError)
 	name := flags.String("name", "", "the Project's name (the main checkout's folder name)")
 	if err := parse(flags, args); err != nil {
@@ -96,7 +96,7 @@ func runProjectAdd(_ env, args []string) error {
 	if err != nil {
 		return err
 	}
-	p, err := client().AddProject(dir, *name)
+	p, err := e.client().AddProject(dir, *name)
 	if err != nil {
 		return err
 	}
@@ -104,14 +104,14 @@ func runProjectAdd(_ env, args []string) error {
 	return nil
 }
 
-func runProjectRemove(_ env, args []string) error {
+func runProjectRemove(e env, args []string) error {
 	if len(args) != 1 {
 		return usageError("usage: booster project remove <name>")
 	}
-	return client().RemoveProject(args[0])
+	return e.client().RemoveProject(args[0])
 }
 
-func runProjectImport(_ env, args []string) error {
+func runProjectImport(e env, args []string) error {
 	flags := flag.NewFlagSet("project import", flag.ContinueOnError)
 	dir := flags.String("dir", filepath.Join(homeDir(), "Projects", "Active"), "the folder of checkouts")
 	if err := parse(flags, args); err != nil {
@@ -124,7 +124,7 @@ func runProjectImport(_ env, args []string) error {
 	if err != nil {
 		return err
 	}
-	rep, err := client().ImportProjects(abs)
+	rep, err := e.client().ImportProjects(abs)
 	if err != nil {
 		return err
 	}

@@ -23,9 +23,12 @@ const outputQueue = 1024
 // and to the attached clients under one lock, so a snapshot and the output
 // after it never overlap or leave a gap.
 type ptySession struct {
-	info session.Info
-	pty  *os.File
-	cmd  *exec.Cmd
+	info     session.Info
+	pty      *os.File
+	cmd      *exec.Cmd
+	resumed  bool        // started with its agent resumed, after a core restart
+	launched time.Time   // when this program started; Started keeps the session's first start
+	closed   atomic.Bool // Close ended it, not the program itself
 
 	mu      sync.Mutex
 	scr     *screen
@@ -46,8 +49,8 @@ func (s *ptySession) snapshotInfo() session.Info {
 }
 
 // readOutput copies the program's output into the emulator and to the
-// clients until the program ends.
-func (s *ptySession) readOutput(onEnd func()) {
+// clients until the program ends, then calls onEnd with its exit error.
+func (s *ptySession) readOutput(onEnd func(error)) {
 	buf := make([]byte, 64*1024)
 	for {
 		n, err := s.pty.Read(buf)
@@ -67,7 +70,7 @@ func (s *ptySession) readOutput(onEnd func()) {
 			break // EIO once the program and its children closed the PTY
 		}
 	}
-	_ = s.cmd.Wait()
+	exitErr := s.cmd.Wait()
 	s.mu.Lock()
 	s.ended = true
 	for a := range s.clients {
@@ -83,7 +86,7 @@ func (s *ptySession) readOutput(onEnd func()) {
 	}
 	_ = s.pty.Close()
 	close(s.done)
-	onEnd()
+	onEnd(exitErr)
 }
 
 // answerQueries forwards the emulator's replies to terminal queries (cursor
@@ -183,6 +186,7 @@ func containsNewline(s string) bool {
 }
 
 func (s *ptySession) close() error {
+	s.closed.Store(true)
 	if s.cmd.Process == nil {
 		return nil
 	}
