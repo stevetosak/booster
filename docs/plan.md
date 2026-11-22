@@ -27,15 +27,16 @@ no separate Herdr or ttt window.
 | 4 | Host | Its own desktop app (first named as Tauri; see 9) |
 | 5 | Session backend | An own session host behind a `SessionBackend` interface; tmux may come later as a second backend |
 | 6 | Shape | A thin shell, a web frontend behind a `Platform` interface, and a headless core that owns the sessions (see [stack.md](stack.md)) |
-| 7 | Code-OSS | Parts as libraries: own shell, Monaco as the editor, chosen `monaco-vscode-api` services (proposed) |
+| 7 | Code-OSS | Level 3, parts as libraries: own shell and layout, Monaco as the editor, chosen `monaco-vscode-api` services; not the workbench, not a fork (2026-11-22) |
 | 8 | Core language | Go, the same binary as the shell (`booster core`); the Operator prefers Go and is open to Rust |
 | 9 | Shell | Wails 3 first; Tauri 2 and Electron only if Wails fails the platform spike |
 | 10 | UI framework | React with TypeScript; the editor and the terminal are imperative widgets inside it |
+| 11 | Wails on Ubuntu 22.04 | The GTK3 build tag (WebKitGTK 4.1): the default GTK4 backend needs GTK 4.10+, the laptop has 4.6.9 (2026-11-22) |
 
 ## 1. Platform spike
 
 **Done when:** one xterm.js frontend runs Claude Code and pi in Wails 3
-(WebKitGTK, GTK4) on the Operator's laptop, measured on both the AMD panel and
+(WebKitGTK 4.1, GTK3; see 11) on the Operator's laptop, measured on both the AMD panel and
 the NVIDIA monitor with the WebGL and DOM renderers; if it lags, the same
 frontend is measured in Tauri 2 (WebKitGTK, GTK3) and Electron; the Operator
 picks the shell.

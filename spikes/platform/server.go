@@ -261,15 +261,22 @@ func (s *server) control(req controlRequest) controlReply {
 	}
 }
 
+// webviewBuild names the WebKitGTK API a build links and its Debian package.
+type webviewBuild struct {
+	API     string `json:"api"`
+	Package string `json:"package"`
+	Version string `json:"version"`
+}
+
 // runReport is one run: the page's measurements with what only this side knows.
 type runReport struct {
-	Label     string            `json:"label"`
-	Renderer  string            `json:"renderer"`
-	Time      string            `json:"time"`
-	Env       map[string]string `json:"env"`
-	WebKitGTK string            `json:"webkitgtk"`
-	Memory    *memoryReport     `json:"memory,omitempty"`
-	Page      json.RawMessage   `json:"page"`
+	Label    string            `json:"label"`
+	Renderer string            `json:"renderer"`
+	Time     string            `json:"time"`
+	Env      map[string]string `json:"env"`
+	Webview  webviewBuild      `json:"webview"`
+	Memory   *memoryReport     `json:"memory,omitempty"`
+	Page     json.RawMessage   `json:"page"`
 }
 
 // reportedEnv are the variables that change how WebKitGTK and the GPU draw.
@@ -280,13 +287,14 @@ var reportedEnv = []string{
 
 func (s *server) saveReport(page json.RawMessage) (string, error) {
 	rep := runReport{
-		Label:     s.cfg.label,
-		Renderer:  s.cfg.renderer,
-		Time:      time.Now().Format(time.RFC3339),
-		Env:       map[string]string{},
-		WebKitGTK: packageVersion("libwebkitgtk-6.0-4"),
-		Page:      page,
+		Label:    s.cfg.label,
+		Renderer: s.cfg.renderer,
+		Time:     time.Now().Format(time.RFC3339),
+		Env:      map[string]string{},
+		Webview:  webview,
+		Page:     page,
 	}
+	rep.Webview.Version = packageVersion(webview.Package)
 	for _, k := range reportedEnv {
 		if v, ok := os.LookupEnv(k); ok {
 			rep.Env[k] = v

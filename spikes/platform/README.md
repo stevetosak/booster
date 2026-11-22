@@ -1,59 +1,48 @@
-# Welcome to Your New Wails3 Project!
+# Platform spike
 
-Congratulations on generating your Wails3 application! This README will guide you through the next steps to get your project up and running.
+Part 1 of [the booster plan](../../docs/plan.md): does a full terminal
+(xterm.js 6) render well enough in Wails 3's system webview (WebKitGTK) on
+the Operator's laptop, on the AMD panel and on the NVIDIA monitor?
 
-## Getting Started
+One Wails window runs xterm.js terminals on real PTYs. The Go side serves the
+terminals and a control channel over WebSockets on loopback; each connection
+must carry a random token that only the window's URL holds. The page names a
+terminal kind (`main`, `cat`, `gen`), never a program.
 
-1. Navigate to your project directory in the terminal.
+## Build
 
-2. To run your application in development mode, use the following command:
+Ubuntu 22.04 has GTK 4.6, and Wails' default GTK4 backend needs 4.10+, so the
+Taskfile builds the GTK3 backend (`-tags gtk3`, WebKitGTK 4.1). It needs
+`libwebkit2gtk-4.1-dev`.
 
-   ```
-   wails3 dev
-   ```
+```sh
+wails3 task build        # bin/platform
+```
 
-   This will start your application and enable hot-reloading for both frontend and backend changes.
+## Run
 
-3. To build your application for production, use:
+```sh
+bin/platform -cmd claude -dir ~/Projects/Active/booster   # or -cmd pi
+bin/platform -renderer dom                                # the DOM renderer
+```
 
-   ```
-   wails3 build
-   ```
+The Terminal view runs the main program. The Benchmarks view runs the suite
+and saves a JSON report:
 
-   This will create a production-ready executable in the `build` directory.
+- **Throughput:** 32 MiB of plain text and 32 MiB of coloured, styled text at
+  full speed; MB/s from the program start to the last byte drawn, and the frame
+  times during the stream.
+- **Typing latency:** keys at a typing pace into `cat` (the kernel echoes them),
+  timed to the echo parsed, drawn, and the next frame; idle, and beside a
+  second terminal that streams 256 KB/s (an agent) or 2 MB/s (a build log).
+- **Memory:** PSS of the app and WebKit's helper processes, idle and under load.
 
-## Exploring Wails3 Features
+The latency starts at xterm.js's input, so it leaves out the path from the
+keyboard through GTK and WebKit to the page; the Operator's own check covers it.
 
-Now that you have your project set up, it's time to explore the features that Wails3 offers:
+## The grid
 
-1. **Check out the examples**: The best way to learn is by example. Visit the `examples` directory in the `v3/examples` directory to see various sample applications.
-
-2. **Run an example**: To run any of the examples, navigate to the example's directory and use:
-
-   ```
-   go run .
-   ```
-
-   Note: Some examples may be under development during the alpha phase.
-
-3. **Explore the documentation**: Visit the [Wails3 documentation](https://v3.wails.io/) for in-depth guides and API references.
-
-4. **Join the community**: Have questions or want to share your progress? Join the [Wails Discord](https://discord.gg/JDdSxwjhGf) or visit the [Wails discussions on GitHub](https://github.com/wailsapp/wails/discussions).
-
-## Project Structure
-
-Take a moment to familiarize yourself with your project structure:
-
-- `frontend/`: Contains your frontend code (HTML, CSS, JavaScript/TypeScript)
-- `main.go`: The entry point of your Go backend
-- `app.go`: Define your application structure and methods here
-- `wails.json`: Configuration file for your Wails project
-
-## Next Steps
-
-1. Modify the frontend in the `frontend/` directory to create your desired UI.
-2. Add backend functionality in `main.go`.
-3. Use `wails3 dev` to see your changes in real-time.
-4. When ready, build your application with `wails3 build`.
-
-Happy coding with Wails3! If you encounter any issues or have questions, don't hesitate to consult the documentation or reach out to the Wails community.
+```sh
+./grid.sh                    # every monitor × default GL / NVIDIA offload × WebGL / DOM
+./summary.sh reports/<run>   # one Markdown table
+```

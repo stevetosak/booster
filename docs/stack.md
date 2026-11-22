@@ -1,6 +1,6 @@
 ---
 title: "booster: the stack"
-description: "Options and the proposal for each layer of the Tauri app: the webview, how much Code-OSS to build on, the editor, the terminal, the core, the UI framework and the classic IDE services."
+description: "Options and the choice for each layer of the app: the webview, how much Code-OSS to build on, the editor, the terminal, the core, the UI framework and the classic IDE services."
 type: design
 status: proposed
 topics: [ide, stack]
@@ -53,6 +53,9 @@ generated TypeScript bindings for Go methods. Wails v3 became stable on
 events, menus, a tray and an MCP service that lets an agent drive and inspect
 a running app. On Linux it uses GTK4 and WebKitGTK 6.0 by default; the GTK3
 stack was kept behind a build tag "until v3.1". It has no Chromium runtime.
+The GTK4 backend needs GTK 4.10+ (`GtkFileDialog`, `gdk_monitor_get_scale`)
+and does not build on Ubuntu 22.04 (GTK 4.6.9), so booster builds with
+`-tags gtk3` there; the tag may go in a later Wails release.
 
 | | Tauri 2 | Wails 3 |
 |---|---|---|
@@ -79,7 +82,7 @@ Chromium path inside the same framework, Wails does not.
 | 3. Code-OSS parts as libraries | Own shell and layout; Monaco as the editor; chosen services from `@codingame/monaco-vscode-api` | VS Code's editor quality: diff editor, peek, inlay hints, code lens, find, multi-cursor; TextMate grammars and themes; LSP wiring that maps 1:1 | Monaco is large and has VS Code's own style of extension points; the shell, tool windows and debugger UI are booster's own work |
 | 4. No Code-OSS | Own shell with CodeMirror 6 | Small, modular, simple to style; own LSP glue | Diff, peek, inlay hints, code lens and the language wiring are own work |
 
-Level 3 is the proposal. The JetBrains feel comes from the shell (tool
+Level 3 is the decision (2026-11-22). The JetBrains feel comes from the shell (tool
 windows, Search Everywhere, keymaps, the debugger and run windows), not from
 the editor widget, so the shell is booster's own; the editor is where VS
 Code's ten years of work are worth taking as they are. Monaco's diff editor
