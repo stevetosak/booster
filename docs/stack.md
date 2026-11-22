@@ -80,8 +80,14 @@ fast to type on and keeps the NVIDIA GPU idle, but it drops more frames below
 against 1–5 on NVIDIA). The app and WebKit's processes use 206–247 MB (PSS)
 idle and 312–375 MB with two terminals, one of them streaming.
 
-By these numbers Wails does not lag, so Tauri and Electron are measured only if
-the Operator's own check with Claude Code and pi finds lag.
+These numbers end where the page has drawn a frame, not where the screen shows
+it, and a continuous stream hides the difference. The Operator's own check
+found it: when the terminal is otherwise idle, the window shows each update
+one update late, so a typed key appears only with the next key. A trace showed
+the keys reach the program once and in order, and the page parses and draws
+each echo within 20 ms; the delay is between WebKit's web process and the
+window, with both renderers, every GL mode and every hardware acceleration
+policy. Whether Wails' GTK3 setup or WebKitGTK 2.50 itself causes it is open.
 
 ## Tauri or Wails
 
