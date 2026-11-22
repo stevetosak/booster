@@ -168,6 +168,44 @@ through raw; the emulator serves only the restore, which the session spike
 compares against `@xterm/headless`. TypeScript stays where the host decides
 it: the frontend and the pi extension.
 
+### Measured: the session spike (2026-11-22)
+
+The session spike (`spikes/session`) runs the core as its own process that the
+window starts detached; closing the window leaves the core and its sessions
+running, and a new window attaches to the same sessions. Every output byte
+goes to `x/vt` and to the attached windows under one lock, so a snapshot and
+the output after it neither overlap nor leave a gap.
+
+The restore was compared with xterm.js on the same recorded output
+(`compare/compare.mjs`, `@xterm/headless` 6.0.0). For a shell with 453 lines,
+417 of them scrollback, and for Claude Code and pi on the alternate screen,
+the restored text, the styled cells, the cursor, the modes and the title all
+match; xterm.js's own serialize addon, as a control, differed in 9 styled
+cells of Claude Code's screen. The snapshot is smaller than the output it
+replaces (34 KB for 39 KB of shell output). Soft wraps come back as hard line
+ends, so restored lines do not reflow on a resize.
+
+Two faults of `x/vt` 0.1.0 needed a filter in front of the emulator. Its
+parser (`x/ansi` up to 0.11.10) ends an OSC string at byte 0x9C, the 8-bit
+String Terminator, which is also a UTF-8 continuation byte: Claude Code's
+title `✳ Claude Code` ends after one byte and the rest prints onto the
+emulator's screen, where Claude Code, which redraws only the cells it
+changed, never clears it. The title handler also drops any title with a `;`.
+The core reads the titles itself and drops other OSC strings with a 0x9C byte
+before the emulator sees them; the windows get the bytes unchanged. Separately,
+`Emulator.Close` races with `Read`, so the core closes the reply pipe instead.
+
+With the Operator's `"tui": "fullscreen"`, Claude Code draws on the alternate
+screen, like pi, so its history scrolls inside Claude Code and xterm.js has no
+scrollback to search for it; a search over an agent's whole output needs the
+agent's own transcript. The agents send their start-up queries (device
+attributes, the kitty keyboard flags, pi's colour queries) before a window
+attaches, so the emulator, not xterm.js, answers them.
+
+An Action prompt is written as a bracketed paste and submitted with Enter 80
+ms later; a multi-line prompt arrived whole in Claude Code's and pi's input.
+Text the Operator has already typed there stays, and the prompt joins it.
+
 ## The classic IDE services
 
 - **Go to definition and code intelligence:** language servers started by the

@@ -32,6 +32,7 @@ no separate Herdr or ttt window.
 | 9 | Shell | Wails 3: it passed the platform spike, so Tauri 2 and Electron were not measured (2026-11-22) |
 | 10 | UI framework | React with TypeScript; the editor and the terminal are imperative widgets inside it |
 | 11 | Wails on Ubuntu 22.04 | The GTK3 build tag (WebKitGTK 4.1): the default GTK4 backend needs GTK 4.10+, the laptop has 4.6.9 (2026-11-22) |
+| 12 | How clients reach the core | One HTTP/WebSocket API on two listeners: a Unix socket (mode 0600) for local tools, and loopback TCP with a token for the window's page, which talks to the core directly (2026-11-22) |
 
 ## 1. Platform spike
 
@@ -53,10 +54,10 @@ session alive across a restart of the window, restores the screen on
 reattach, keeps xterm.js scrollback and search, and delivers an Action prompt
 to each agent.
 
-- [ ] A Go session host on `creack/pty` and `charmbracelet/x/vt` with a socket protocol.
-- [ ] The restored screen and scrollback compared with `@xterm/headless` on the same output.
-- [ ] The spike app attaches to it, closes, opens and attaches again.
-- [ ] An Action prompt reaches Claude Code and pi.
+- [x] A Go session host on `creack/pty` and `charmbracelet/x/vt` with a socket protocol (`spikes/session`, see 12).
+- [x] The restored screen and scrollback compared with `@xterm/headless` on the same output ([stack.md](stack.md#measured-the-session-spike-2026-11-22)).
+- [ ] The spike app attaches to it, closes, opens and attaches again: done with a shell; the Operator's check with Claude Code and pi waits.
+- [ ] An Action prompt reaches Claude Code and pi: typed whole into both input boxes; the submitted prompt is the Operator's check.
 
 ## Later parts
 
