@@ -76,7 +76,7 @@ shell and the editor in Part 4, which ends when booster replaces ttt. During
 this part kalfa's herdr Module (`kalfa board`, the successor tab, `kalfa
 space`) still sees only Herdr (see 13).
 
-- [ ] The code tree: one Go module at the repository root with `booster` (the window) and `booster core`; the spike's session host, core and window move in and are cleaned, and `spikes/` stays as the record.
+- [x] The code tree: one Go module at the repository root with `booster` (the window) and `booster core`; the spike's session host, core and window move in and are cleaned, and `spikes/` stays as the record. The build is a Makefile, not Wails' generated Taskfiles, and CI runs gofmt, vet, the race tests and the build on GTK3.
 - [ ] Projects: the registry, the worktrees, the kalfa project key and the one-time import (see 15).
 - [ ] Sessions: a session id per agent, the session list saved, resume after a core restart, a separate instance for development builds (see 14); the agent's state (working, idle, waiting for the Operator) is shaped as its own design question.
 - [ ] `--json` output in kalfa for `task list`, `task show`, `plan` and `defer`, in the kalfa repository (see 16).
