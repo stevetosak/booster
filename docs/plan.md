@@ -56,8 +56,8 @@ to each agent.
 
 - [x] A Go session host on `creack/pty` and `charmbracelet/x/vt` with a socket protocol (`spikes/session`, see 12).
 - [x] The restored screen and scrollback compared with `@xterm/headless` on the same output ([stack.md](stack.md#measured-the-session-spike-2026-11-22)).
-- [ ] The spike app attaches to it, closes, opens and attaches again: done with a shell; the Operator's check with Claude Code and pi waits.
-- [ ] An Action prompt reaches Claude Code and pi: typed whole into both input boxes; the submitted prompt is the Operator's check.
+- [x] The spike app attaches to it, closes, opens and attaches again, with a shell, Claude Code and pi (the Operator's check). A search finds a shell line restored from the scrollback; in the fullscreen agents it holds only for the screen as it is, so a search over an agent's output comes from its transcript in a later part.
+- [x] An Action prompt reaches Claude Code and pi and starts a turn in each (the Operator's check).
 
 ## Later parts
 

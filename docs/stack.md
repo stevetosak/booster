@@ -197,10 +197,14 @@ before the emulator sees them; the windows get the bytes unchanged. Separately,
 
 With the Operator's `"tui": "fullscreen"`, Claude Code draws on the alternate
 screen, like pi, so its history scrolls inside Claude Code and xterm.js has no
-scrollback to search for it; a search over an agent's whole output needs the
-agent's own transcript. The agents send their start-up queries (device
-attributes, the kitty keyboard flags, pi's colour queries) before a window
-attaches, so the emulator, not xterm.js, answers them.
+scrollback to search for it. In the Operator's check, a search in a shell
+found a line restored from the scrollback; in Claude Code the first match was
+marked on the right text and the next ones on other text, because the search
+marks cells while the agent scrolls by drawing its rows again. A search over
+an agent's output needs the agent's own transcript. The agents send their
+start-up queries (device attributes, the kitty keyboard flags, pi's colour
+queries) before a window attaches, so the emulator, not xterm.js, answers
+them.
 
 An Action prompt is written as a bracketed paste and submitted with Enter 80
 ms later; a multi-line prompt arrived whole in Claude Code's and pi's input.

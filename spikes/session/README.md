@@ -67,6 +67,10 @@ recording through xterm.js's own serialize addon.
 
 - On the alternate screen the main screen's lines are not restored (the
   emulator hands out only the active screen); its scrollback is.
+- A program on the alternate screen (Claude Code with `"tui": "fullscreen"`,
+  pi) keeps its history itself, so the search covers only its screen as it is,
+  and a match's mark stays on the cells while the program draws other text
+  there.
 - Soft-wrapped lines come back as hard line ends, so they do not reflow when
   the window resizes, and a search does not match across the wrap.
 - The pen (the style of the next character), character sets, the keypad mode
