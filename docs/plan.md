@@ -33,6 +33,10 @@ no separate Herdr or ttt window.
 | 10 | UI framework | React with TypeScript; the editor and the terminal are imperative widgets inside it |
 | 11 | Wails on Ubuntu 22.04 | The GTK3 build tag (WebKitGTK 4.1): the default GTK4 backend needs GTK 4.10+, the laptop has 4.6.9 (2026-11-22) |
 | 12 | How clients reach the core | One HTTP/WebSocket API on two listeners: a Unix socket (mode 0600) for local tools, and loopback TCP with a token for the window's page, which talks to the core directly (2026-11-22) |
+| 13 | Scope of Part 3 | The core and a minimal window; Part 3 ends when booster replaces Herdr for a day of work, Part 4 when it replaces ttt; kalfa's herdr Module sees only Herdr until a later part (2026-11-22) |
+| 14 | Agents across a core restart | The core owns the PTYs; each agent gets a session id at start and is started again with resume after a core restart; a development build runs as a separate instance; a holder process per session stays a later option behind `session.Backend` (2026-11-22) |
+| 15 | How booster knows a Project | An own registry (`$XDG_CONFIG_HOME/booster/projects.json`: name and main checkout), worktrees from `git worktree list`, the kalfa project key computed as kalfa does, a one-time import of `~/Projects/Active` (2026-11-22) |
+| 16 | How the Board reads kalfa | Through kalfa's CLI, with new `--json` output; booster does not read kalfa's files (2026-11-22) |
 
 ## 1. Platform spike
 
@@ -59,10 +63,32 @@ to each agent.
 - [x] The spike app attaches to it, closes, opens and attaches again, with a shell, Claude Code and pi (the Operator's check). A search finds a shell line restored from the scrollback; in the fullscreen agents it holds only for the screen as it is, so a search over an agent's output comes from its transcript in a later part.
 - [x] An Action prompt reaches Claude Code and pi and starts a turn in each (the Operator's check).
 
+## 3. Core skeleton
+
+**Done when:** the Operator does one full day of agent work in booster with
+no Herdr: Projects open by name, Claude Code and pi sessions run per Project
+in tabs and survive a restart of the window, and the Board shows the Tasks of
+every Project.
+
+The core leaves the spike and becomes `booster core`, the long-lived service
+in the booster binary. The window stays minimal; the IDE layout comes with the
+shell and the editor in Part 4, which ends when booster replaces ttt. During
+this part kalfa's herdr Module (`kalfa board`, the successor tab, `kalfa
+space`) still sees only Herdr (see 13).
+
+- [ ] The code tree: one Go module at the repository root with `booster` (the window) and `booster core`; the spike's session host, core and window move in and are cleaned, and `spikes/` stays as the record.
+- [ ] Projects: the registry, the worktrees, the kalfa project key and the one-time import (see 15).
+- [ ] Sessions: a session id per agent, the session list saved, resume after a core restart, a separate instance for development builds (see 14); the agent's state (working, idle, waiting for the Operator) is shaped as its own design question.
+- [ ] `--json` output in kalfa for `task list`, `task show`, `plan` and `defer`, in the kalfa repository (see 16).
+- [ ] The Board: the Tasks of every Project, from kalfa's CLI.
+- [ ] The minimal window: a Project switcher, session tabs per Project, the Board as a list.
+- [ ] The Operator's one-day check without Herdr.
+
 ## Later parts
 
-Shaped after the two spikes, each with its own Done when line: the core
-skeleton (Projects, Sessions, the Board from kalfa's Task Records), the shell
-and the editor, Actions with the first default Action ("Generate run
-configuration"), agentic config, usage analytics from kalfa's meter with
-optional Langfuse export, and the classic IDE services.
+Shaped after Part 3, each with its own Done when line: the shell and the
+editor (Part 4, done when booster replaces ttt), Actions with the first
+default Action ("Generate run configuration"), agentic config, usage
+analytics from kalfa's meter with optional Langfuse export, the classic IDE
+services, and a kalfa Module that reaches booster's sessions as the herdr
+Module reaches Herdr's.

@@ -168,6 +168,22 @@ through raw; the emulator serves only the restore, which the session spike
 compares against `@xterm/headless`. TypeScript stays where the host decides
 it: the frontend and the pi extension.
 
+### Agents across a core restart
+
+The session spike keeps the agents alive while the window restarts, but the
+core process owns their PTYs, so a core restart (a crash, an upgrade, a
+reboot) ends them. Both agents take a session id at start and resume by it
+(Claude Code 2.1.330 `--session-id` and `--resume`, pi 1.5.2 `--session-id`
+and `--session`), so the core records each agent's id and starts it again
+with resume after its own restart: the conversation survives, a running turn
+and the screen do not. A development build runs as a separate instance with
+its own socket and runtime folder, so building booster inside booster never
+restarts the daily core. A holder process per session, the dtach model, would
+keep running turns alive across a core restart, at the cost of a holder
+protocol and more processes; tmux as the backend would do the same with its
+own emulator for the restore. Both stay possible behind `session.Backend`
+(decision of 2026-11-22).
+
 ### Measured: the session spike (2026-11-22)
 
 The session spike (`spikes/session`) runs the core as its own process that the
