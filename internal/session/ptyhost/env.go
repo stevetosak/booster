@@ -6,8 +6,10 @@ import "strings"
 // agent session it runs in. booster's sessions are their own, so a variable
 // the core got from the shell or the agent session that started it must not
 // reach them: a Claude Code that sees CLAUDECODE refuses to start, and a
-// HERDR_PANE_ID would make Herdr tooling report into the wrong pane. Settings
-// (for example CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS) stay.
+// HERDR_PANE_ID would make Herdr tooling report into the wrong pane, and a
+// BOOSTER_INSTANCE would put a booster that an agent builds into the core's
+// own instance. Settings (for example CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS)
+// stay.
 var identityPrefixes = []string{
 	"CLAUDECODE=",
 	"CLAUDE_PID=",
@@ -18,6 +20,7 @@ var identityPrefixes = []string{
 	"CLAUDE_CODE_ENTRYPOINT=",
 	"CLAUDE_CODE_EXECPATH=",
 	"HERDR_",
+	"BOOSTER_INSTANCE=",
 	"TERM=",
 	"TERM_PROGRAM=",
 	"TERM_PROGRAM_VERSION=",

@@ -29,7 +29,7 @@ func startCore(t *testing.T) (Paths, *Server, Info) {
 	t.Cleanup(func() { _ = os.RemoveAll(dir) })
 	p := PathsIn(dir)
 	host := ptyhost.New(ptyhost.Options{
-		Programs: map[session.Kind][]string{"echo": {"bash", "-c", `printf 'ready\n'; while read -r l; do printf 'echo:%s\n' "$l"; done`}},
+		Programs: map[session.Kind]ptyhost.Program{"echo": {Argv: []string{"bash", "-c", `printf 'ready\n'; while read -r l; do printf 'echo:%s\n' "$l"; done`}}},
 		Env:      os.Environ(),
 	})
 	srv, err := Listen(Config{

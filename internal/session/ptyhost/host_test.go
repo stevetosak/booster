@@ -14,7 +14,7 @@ import (
 func newTestHost(t *testing.T, script string) (*Host, session.Info) {
 	t.Helper()
 	h := New(Options{
-		Programs: map[session.Kind][]string{"test": {"bash", "-c", script}},
+		Programs: map[session.Kind]Program{"test": {Argv: []string{"bash", "-c", script}}},
 		Env:      os.Environ(),
 	})
 	t.Cleanup(h.Shutdown)

@@ -26,6 +26,10 @@ _Avoid_: backend, server, daemon
 The program that supplies the classic IDE side and shows booster's UI through an adapter over the Core.
 _Avoid_: frontend, shell, editor
 
+**Instance**:
+One booster core with its own folders and sessions: the main instance is the daily booster, the dev instance is any other build.
+_Avoid_: profile, environment
+
 **Session host**:
 The part of the Core that owns the PTYs, keeps each screen for reattach and injects input; it implements `SessionBackend`.
 _Avoid_: multiplexer, terminal server

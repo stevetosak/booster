@@ -37,69 +37,91 @@ func runWindow(e env, args []string) error {
 	if err != nil {
 		return err
 	}
-	info, err := core.Ensure(core.DefaultPaths(), self, webviewgpu.OriginalEnviron())
+	info, err := core.Ensure(e.paths(), self, webviewgpu.OriginalEnviron())
 	if err != nil {
 		return err
 	}
-	log.Printf("core %d at %s", info.PID, info.Addr)
+	log.Printf("core %d (instance %s) at %s", info.PID, e.inst.Name, info.Addr)
 	return window.Run(window.Options{Page: e.page, Core: info, Dir: *dir, X: *x, Y: *y})
 }
 
-func runCore(_ env, args []string) error {
+func runCore(e env, args []string) error {
 	if err := parse(flag.NewFlagSet("core", flag.ContinueOnError), args); err != nil {
 		return err
 	}
-	registry, err := project.DefaultPath()
+	config, err := e.inst.ConfigDir()
 	if err != nil {
 		return err
 	}
+	state, err := e.inst.StateDir()
+	if err != nil {
+		return err
+	}
+	host := ptyhost.New(ptyhost.Options{
+		Programs:  programs(),
+		Env:       webviewgpu.OriginalEnviron(),
+		StateFile: filepath.Join(state, "sessions.json"),
+	})
 	srv, err := core.Listen(core.Config{
-		Paths:      core.DefaultPaths(),
-		Backend:    ptyhost.New(ptyhost.Options{Programs: programs(), Env: webviewgpu.OriginalEnviron()}),
-		Projects:   project.NewRegistry(registry),
+		Paths:      e.paths(),
+		Backend:    host,
+		Projects:   project.NewRegistry(filepath.Join(config, "projects.json")),
 		PageOrigin: window.PageOrigin,
 	})
 	if err != nil {
 		return err
 	}
+	// Restore after Listen: the core's lock makes this core the only one
+	// that starts the saved sessions again.
+	started, errs := host.Restore()
+	for _, err := range errs {
+		log.Printf("restore: %v", err)
+	}
+	log.Printf("core %d (instance %s) restored %d sessions", os.Getpid(), e.inst.Name, len(started))
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	signal.Ignore(syscall.SIGHUP) // the core outlives the terminal that started it
 	go func() { <-sig; srv.Stop() }()
-	log.Printf("core %d listening: %s", os.Getpid(), srv)
+	log.Printf("core %d (instance %s) listening: %s", os.Getpid(), e.inst.Name, srv)
 	srv.Serve()
 	log.Printf("core %d stopped", os.Getpid())
 	return nil
 }
 
-// programs maps the session kinds to command lines.
-func programs() map[session.Kind][]string {
+// programs are the session kinds. Claude Code takes a new session id with
+// --session-id and refuses one that has a conversation, which --resume
+// takes; pi takes --session-id for both.
+func programs() map[session.Kind]ptyhost.Program {
 	shell := os.Getenv("SHELL")
 	if shell == "" {
 		shell = "/bin/bash"
 	}
-	return map[session.Kind][]string{
-		session.KindClaude: {"claude"},
-		session.KindPi:     {"pi"},
-		session.KindShell:  {shell, "-l"},
+	return map[session.Kind]ptyhost.Program{
+		session.KindClaude: {Argv: []string{"claude"}, Start: []string{"--session-id", "{id}"}, Resume: []string{"--resume", "{id}"}},
+		session.KindPi:     {Argv: []string{"pi"}, Start: []string{"--session-id", "{id}"}},
+		session.KindShell:  {Argv: []string{shell, "-l"}},
 	}
 }
 
-func runList(_ env, args []string) error {
+func runList(e env, args []string) error {
 	if err := parse(flag.NewFlagSet("list", flag.ContinueOnError), args); err != nil {
 		return err
 	}
-	list, err := client().List()
+	list, err := e.client().List()
 	if err != nil {
 		return err
 	}
 	for _, s := range list {
-		fmt.Printf("%s  %-6s  %3dx%-3d  clients %d  %s  %q\n", s.ID, s.Kind, s.Size.Cols, s.Size.Rows, s.Clients, s.Dir, s.Title)
+		fmt.Printf("%s  %-6s  %3dx%-3d  clients %d  %s  %q", s.ID, s.Kind, s.Size.Cols, s.Size.Rows, s.Clients, s.Dir, s.Title)
+		if s.Agent != "" {
+			fmt.Printf("  agent %s", s.Agent)
+		}
+		fmt.Println()
 	}
 	return nil
 }
 
-func runNew(_ env, args []string) error {
+func runNew(e env, args []string) error {
 	flags := flag.NewFlagSet("new", flag.ContinueOnError)
 	kind := flags.String("kind", string(session.KindShell), "claude, pi or shell")
 	dir := flags.String("dir", homeDir(), "working folder")
@@ -110,7 +132,7 @@ func runNew(_ env, args []string) error {
 	if err != nil {
 		return err
 	}
-	info, err := client().Create(session.Spec{Kind: session.Kind(*kind), Dir: abs})
+	info, err := e.client().Create(session.Spec{Kind: session.Kind(*kind), Dir: abs})
 	if err != nil {
 		return err
 	}
@@ -118,7 +140,7 @@ func runNew(_ env, args []string) error {
 	return nil
 }
 
-func runPrompt(_ env, args []string) error {
+func runPrompt(e env, args []string) error {
 	flags := flag.NewFlagSet("prompt", flag.ContinueOnError)
 	submit := flags.Bool("submit", true, "press Enter after the prompt")
 	if err := parse(flags, args); err != nil {
@@ -135,25 +157,22 @@ func runPrompt(_ env, args []string) error {
 		}
 		text = strings.TrimRight(string(b), "\n")
 	}
-	return client().Prompt(flags.Arg(0), text, *submit)
+	return e.client().Prompt(flags.Arg(0), text, *submit)
 }
 
-func runClose(_ env, args []string) error {
+func runClose(e env, args []string) error {
 	if len(args) != 1 {
 		return usageError("usage: booster close <id>")
 	}
-	return client().Close(args[0])
+	return e.client().Close(args[0])
 }
 
-func runStop(_ env, args []string) error {
+func runStop(e env, args []string) error {
 	if len(args) != 0 {
 		return usageError("usage: booster stop")
 	}
-	return client().Shutdown()
+	return e.client().Shutdown()
 }
-
-// client reaches the running core over its Unix socket.
-func client() *core.Client { return core.NewClient(core.DefaultPaths()) }
 
 func homeDir() string {
 	home, err := os.UserHomeDir()

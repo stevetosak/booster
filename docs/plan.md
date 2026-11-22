@@ -37,6 +37,8 @@ no separate Herdr or ttt window.
 | 14 | Agents across a core restart | The core owns the PTYs; each agent gets a session id at start and is started again with resume after a core restart; a development build runs as a separate instance; a holder process per session stays a later option behind `session.Backend` (2026-11-22) |
 | 15 | How booster knows a Project | An own registry (`$XDG_CONFIG_HOME/booster/projects.json`: name and main checkout), worktrees from `git worktree list`, the kalfa project key computed as kalfa does, a one-time import of `~/Projects/Active` (2026-11-22) |
 | 16 | How the Board reads kalfa | Through kalfa's CLI, with new `--json` output; booster does not read kalfa's files (2026-11-22) |
+| 17 | Instances | Every build is the dev instance unless `make install` stamps it as the main one; `BOOSTER_INSTANCE` names another for one run; each instance has its own runtime, state and config folders, so a dev instance has its own Project list (2026-11-22) |
+| 18 | Agent state | The agents report it (working, waiting for the Operator, idle), with the reporting added to each session at start: Claude Code hooks through `--settings` that run `booster hook`, a booster pi extension through `--extension`; nothing goes into the Operator's global settings (2026-11-22) |
 
 ## 1. Platform spike
 
