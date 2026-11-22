@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=booster platform spike
+Comment=A platform application
+# The Exec line includes %u to pass the URL to the application
+Exec=/usr/local/bin/platform %u
+Terminal=false
+Type=Application
+Icon=platform
+Categories=Utility;
+StartupWMClass=platform
+
+ 

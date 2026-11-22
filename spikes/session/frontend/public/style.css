@@ -1,0 +1,38 @@
+:root {
+  color-scheme: dark;
+  --bg: #18181b;
+  --panel: #27272a;
+  --line: #3f3f46;
+  --text: #e4e4e7;
+  --muted: #a1a1aa;
+  --accent: #60a5fa;
+  --danger: #f87171;
+}
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text); font: 13px system-ui, sans-serif; }
+.app { display: flex; height: 100%; }
+.sidebar { width: 260px; flex: none; padding: 12px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; overflow: auto; }
+.sidebar h1 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0; }
+.sidebar ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.sidebar li { padding: 6px 8px; border-radius: 6px; cursor: pointer; display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; }
+.sidebar li:hover { background: var(--panel); }
+.sidebar li.active { background: var(--line); }
+.sidebar .kind { color: var(--accent); font-weight: 600; }
+.sidebar .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar .meta { grid-column: 1 / -1; color: var(--muted); font-size: 11px; }
+.sidebar .dir { display: flex; flex-direction: column; gap: 4px; color: var(--muted); }
+.new { display: flex; flex-wrap: wrap; gap: 6px; }
+button { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer; font: inherit; }
+button:hover { border-color: var(--accent); }
+button.danger:hover { border-color: var(--danger); color: var(--danger); }
+input, textarea { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font: inherit; }
+.error { color: var(--danger); white-space: pre-wrap; }
+main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.stage { flex: 1; min-height: 0; position: relative; padding: 6px; }
+.term { position: absolute; inset: 6px; }
+.empty { color: var(--muted); padding: 20px; }
+.bar { display: flex; align-items: center; gap: 6px; padding: 6px; border-top: 1px solid var(--line); }
+.bar input { flex: 0 1 320px; }
+.bar.action textarea { flex: 1; resize: vertical; font-family: "JetBrainsMono Nerd Font Mono", monospace; }
+.hint { color: var(--muted); font-size: 12px; }
