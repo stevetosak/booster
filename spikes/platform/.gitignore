@@ -4,3 +4,5 @@ bin
 frontend/dist
 frontend/node_modules
 reports
+frontend/bindings
+build/linux/platform.desktop

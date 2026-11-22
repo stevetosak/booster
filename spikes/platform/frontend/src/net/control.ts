@@ -59,6 +59,11 @@ export class ControlClient {
     return reply.memory;
   }
 
+  /** Writes a step of the run to the Go side's log, where a watcher sees it. */
+  async progress(step: string): Promise<void> {
+    await this.request({ op: "progress", step });
+  }
+
   /** Saves the page's report with the Go side's facts; returns the file path. */
   async saveReport(report: unknown): Promise<string> {
     const reply = await this.request({ op: "report", report });

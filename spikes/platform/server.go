@@ -22,9 +22,6 @@ import (
 	"github.com/coder/websocket/wsjson"
 )
 
-// wailsOrigin is the host of the page origin on Linux (wails://wails).
-const wailsOrigin = "wails"
-
 // quitDelay lets the frontend read the reply before the window closes.
 const quitDelay = 300 * time.Millisecond
 
@@ -90,7 +87,14 @@ func (s *server) accept(w http.ResponseWriter, r *http.Request) (*websocket.Conn
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return nil, false
 	}
-	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: []string{wailsOrigin}})
+	// The whole origin, scheme included, must be the window's: a host pattern
+	// alone would also let in an http://localhost page.
+	if origin := r.Header.Get("Origin"); origin != webview.Origin {
+		log.Printf("refused %s from origin %q: the page origin of this build is %q", r.URL.Path, origin, webview.Origin)
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return nil, false
+	}
+	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{InsecureSkipVerify: true}) // the origin is checked above
 	if err != nil {
 		log.Printf("refused %s from origin %q: %v", r.URL.Path, r.Header.Get("Origin"), err)
 		return nil, false
@@ -207,9 +211,11 @@ func pumpInput(ctx context.Context, conn *websocket.Conn, sess *ptySession) {
 	}
 }
 
-// controlRequest asks for the memory of the process tree, or saves a report.
+// controlRequest asks for the memory of the process tree, logs the page's
+// progress, or saves a report.
 type controlRequest struct {
 	Op     string          `json:"op"`
+	Step   string          `json:"step,omitempty"`
 	Report json.RawMessage `json:"report,omitempty"`
 }
 
@@ -250,6 +256,10 @@ func (s *server) control(req controlRequest) controlReply {
 			return controlReply{Op: req.Op, Error: err.Error()}
 		}
 		return controlReply{Op: req.Op, Memory: &mem}
+	case "progress":
+		// The log is how a watcher sees a run advance or stall.
+		log.Printf("progress: %s", req.Step)
+		return controlReply{Op: req.Op}
 	case "report":
 		path, err := s.saveReport(req.Report)
 		if err != nil {
@@ -261,11 +271,13 @@ func (s *server) control(req controlRequest) controlReply {
 	}
 }
 
-// webviewBuild names the WebKitGTK API a build links and its Debian package.
+// webviewBuild names the WebKitGTK API a build links, its Debian package, and
+// the origin of the window's page.
 type webviewBuild struct {
 	API     string `json:"api"`
 	Package string `json:"package"`
 	Version string `json:"version"`
+	Origin  string `json:"origin"`
 }
 
 // runReport is one run: the page's measurements with what only this side knows.
@@ -276,6 +288,7 @@ type runReport struct {
 	Env      map[string]string `json:"env"`
 	Webview  webviewBuild      `json:"webview"`
 	Memory   *memoryReport     `json:"memory,omitempty"`
+	GPU      []processGPU      `json:"gpu,omitempty"`
 	Page     json.RawMessage   `json:"page"`
 }
 
@@ -302,6 +315,7 @@ func (s *server) saveReport(page json.RawMessage) (string, error) {
 	}
 	if mem, err := readMemory(); err == nil {
 		rep.Memory = &mem
+		rep.GPU = readGPU(mem.Processes)
 	}
 	data, err := json.MarshalIndent(rep, "", "  ")
 	if err != nil {

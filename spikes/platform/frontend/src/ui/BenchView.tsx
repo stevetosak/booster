@@ -36,7 +36,12 @@ export function BenchView({ params, control, visible, autostart, onRunningChange
     setError(null);
     onRunningChange(true);
     try {
-      const result = await runSuite(slots, params, control, defaultPlan, setStep);
+      const onProgress = (step: string) => {
+        setStep(step);
+        void control.progress(step).catch(() => {}); // the log is a help, not a condition
+      };
+      const result = await runSuite(slots, params, control, defaultPlan, onProgress);
+      void control.progress(`done, ${result.errors.length} errors`).catch(() => {});
       setReport(result);
       setSavedPath(await control.saveReport(result));
     } catch (err) {
