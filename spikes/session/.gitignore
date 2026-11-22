@@ -1,0 +1,9 @@
+.task
+.wails
+bin
+frontend/dist
+frontend/node_modules
+reports
+frontend/bindings
+build/linux/session.desktop
+compare/node_modules

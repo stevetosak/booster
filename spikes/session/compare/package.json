@@ -1,0 +1,10 @@
+{
+  "name": "booster-session-compare",
+  "private": true,
+  "type": "module",
+  "description": "Compares the x/vt screen restore with xterm.js fed the same output",
+  "dependencies": {
+    "@xterm/addon-serialize": "0.14.0",
+    "@xterm/headless": "6.0.0"
+  }
+}
