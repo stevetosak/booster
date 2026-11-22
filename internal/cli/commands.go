@@ -12,6 +12,7 @@ import (
 	"syscall"
 
 	"github.com/stevetosak/booster/internal/core"
+	"github.com/stevetosak/booster/internal/project"
 	"github.com/stevetosak/booster/internal/session"
 	"github.com/stevetosak/booster/internal/session/ptyhost"
 	"github.com/stevetosak/booster/internal/window"
@@ -48,8 +49,16 @@ func runCore(_ env, args []string) error {
 	if err := parse(flag.NewFlagSet("core", flag.ContinueOnError), args); err != nil {
 		return err
 	}
-	host := ptyhost.New(ptyhost.Options{Programs: programs(), Env: webviewgpu.OriginalEnviron()})
-	srv, err := core.Listen(core.DefaultPaths(), host, window.PageOrigin)
+	registry, err := project.DefaultPath()
+	if err != nil {
+		return err
+	}
+	srv, err := core.Listen(core.Config{
+		Paths:      core.DefaultPaths(),
+		Backend:    ptyhost.New(ptyhost.Options{Programs: programs(), Env: webviewgpu.OriginalEnviron()}),
+		Projects:   project.NewRegistry(registry),
+		PageOrigin: window.PageOrigin,
+	})
 	if err != nil {
 		return err
 	}
