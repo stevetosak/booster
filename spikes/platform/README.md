@@ -46,3 +46,18 @@ keyboard through GTK and WebKit to the page; the Operator's own check covers it.
 ./grid.sh                    # every monitor × default GL / NVIDIA offload × WebGL / DOM
 ./summary.sh reports/<run>   # one Markdown table
 ```
+
+## The one-update-late check
+
+On the laptop the window showed each terminal update one update late, while
+the page had drawn it within 20 ms (`-trace` logs input and output events).
+`webkitcheck` is one WebKitGTK 4.1 window without Wails, to tell whether
+WebKitGTK or the embedding app causes it: its page counter must match the
+window title's.
+
+```sh
+gcc -O2 -o bin/webkitcheck webkitcheck/webkitcheck.c $(pkg-config --cflags --libs webkit2gtk-4.1)
+bin/webkitcheck            # hardware acceleration always, as Wails sets it
+bin/webkitcheck never
+bin/platform -gpu-policy never
+```
